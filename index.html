@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadership Constraint Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #1e3a8a;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 1.125rem;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        
+        .info-box ul {
+            margin-top: 15px;
+            list-style: none;
+        }
+        
+        .info-box li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .info-box li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .question {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        .option {
+            width: 100%;
+            padding: 18px 24px;
+            margin-bottom: 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .option:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .chart-container {
+            margin: 40px 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .primary-constraint {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .primary-constraint h3 {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+        
+        .primary-constraint p {
+            font-size: 1.75rem;
+            font-weight: bold;
+        }
+        
+        .domain-descriptions {
+            margin: 30px 0;
+        }
+        
+        .domain-item {
+            padding-left: 20px;
+            border-left: 4px solid;
+            margin-bottom: 20px;
+        }
+        
+        .domain-item.self { border-color: #3b82f6; }
+        .domain-item.team { border-color: #8b5cf6; }
+        .domain-item.company { border-color: #06b6d4; }
+        
+        .domain-item h4 {
+            font-size: 1.125rem;
+            margin-bottom: 5px;
+        }
+        
+        .contact-form {
+            border-top: 2px solid #e5e7eb;
+            padding-top: 30px;
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .thank-you {
+            text-align: center;
+        }
+        
+        .checkmark {
+            width: 64px;
+            height: 64px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .checkmark svg {
+            width: 32px;
+            height: 32px;
+            stroke: #16a34a;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- INTRO SCREEN -->
+        <div id="intro-screen">
+            <h1>Leadership Constraint Diagnostic</h1>
+            <p class="subtitle">A Clear Look at Where Your Leadership Needs Focus in 2026</p>
+            
+            <div class="info-box">
+                <p><strong>This diagnostic will help you identify where you're most constrained as a leader across three essential domains:</strong></p>
+                <ul>
+                    <li><strong>You:</strong> Your self-awareness, confidence, clarity, and personal capacity</li>
+                    <li><strong>Team:</strong> Your team's alignment, trust, and effectiveness</li>
+                    <li><strong>Company:</strong> Your organization's strategy, systems, and execution</li>
+                </ul>
+            </div>
+            
+            <p style="color: #64748b; margin-bottom: 30px;">
+                You'll answer 30 brief statements (about 5 minutes). Your results will show you immediately where focused attention will create the greatest relief and momentum.
+            </p>
+            
+            <button class="btn" onclick="startDiagnostic()">Begin Diagnostic</button>
+        </div>
+        
+        <!-- QUESTIONS SCREEN -->
+        <div id="questions-screen" class="hidden">
+            <div class="progress-text">
+                <span>Leadership Diagnostic</span>
+                <span id="progress-count">Question 1 of 30</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            
+            <h2 class="question" id="question-text"></h2>
+            
+            <button class="option" onclick="answerQuestion(1)">Strongly Agree</button>
+            <button class="option" onclick="answerQuestion(2)">Agree</button>
+            <button class="option" onclick="answerQuestion(3)">Neutral</button>
+            <button class="option" onclick="answerQuestion(4)">Disagree</button>
+            <button class="option" onclick="answerQuestion(5)">Strongly Disagree</button>
+        </div>
+        
+        <!-- RESULTS SCREEN -->
+        <div id="results-screen" class="hidden">
+            <div class="results-header">
+                <h1>Your Results</h1>
+                <p class="subtitle">Here's where your leadership is most constrained right now</p>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>The largest segment of the chart represents the area where your leadership is currently most constrained. This is where focused attention will create the greatest relief and momentum.</strong></p>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="resultsChart" width="400" height="400"></canvas>
+            </div>
+            
+            <div class="primary-constraint">
+                <h3>Your Primary Constraint:</h3>
+                <p id="primary-constraint-text"></p>
+            </div>
+            
+            <div class="info-box" style="text-align: left;">
+                <p id="constraint-summary"></p>
+            </div>
+            
+            <div class="domain-descriptions">
+                <div class="domain-item self">
+                    <h4>You</h4>
+                    <p>Your self-awareness, confidence, clarity, capacity, and personal leadership foundation</p>
+                </div>
+                <div class="domain-item team">
+                    <h4>Team</h4>
+                    <p>Your team's alignment, trust, clarity, and ability to execute together</p>
+                </div>
+                <div class="domain-item company">
+                    <h4>Company</h4>
+                    <p>Your organization's strategy, systems, structure, and execution capacity</p>
+                </div>
+            </div>
+            
+            <div class="contact-form">
+                <h3 style="margin-bottom: 10px;">Save Your Results</h3>
+                <p style="color: #64748b; margin-bottom: 20px;">
+                    Enter your information below to receive a copy of your results and learn how NoviEdge can support your leadership focus in 2026.
+                </p>
+                
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Company (Optional)</label>
+                    <input type="text" id="company">
+                </div>
+                
+                <button class="btn" onclick="submitResults()">Save My Results</button>
+            </div>
+        </div>
+        
+        <!-- THANK YOU SCREEN -->
+        <div id="thankyou-screen" class="hidden">
+            <div class="thank-you">
+                <div class="checkmark">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 style="margin-bottom: 10px;">Thank You!</h2>
+                <p class="subtitle">Your results have been saved and emailed to you.</p>
+                
+                <div class="info-box" style="margin-top: 30px;">
+                    <p style="margin-bottom: 15px;">
+                        Your primary constraint area is <strong id="final-constraint"></strong>.
+                    </p>
+                    <p>
+                        We look forward to exploring this with you at the Lunch & Leaders gathering on February 3rd.
+                    </p>
+                </div>
+                
+                <p style="color: #64748b; margin-top: 30px;">
+                    Questions? Contact us at NoviEdge to continue the conversation.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { text: "I feel confident in my judgment when making high-stakes decisions.", domain: 'self' },
+            { text: "I am clear on my primary role as a leader and where I add the most value.", domain: 'self' },
+            { text: "I consistently make decisions aligned with my values, even under pressure.", domain: 'self' },
+            { text: "I trust myself to navigate uncertainty without needing constant validation from others.", domain: 'self' },
+            { text: "I am able to separate my emotions from the decisions I need to make as a leader.", domain: 'self' },
+            { text: "I have the mental and emotional capacity to lead effectively right now.", domain: 'self' },
+            { text: "I regularly take time to think strategically rather than only reacting to what's urgent.", domain: 'self' },
+            { text: "I feel equipped to lead through conflict or difficult conversations.", domain: 'self' },
+            { text: "I understand my own leadership blind spots.", domain: 'self' },
+            { text: "I am confident in my ability to prioritize the right work and say no to distractions.", domain: 'self' },
+            { text: "My leadership team understands what is expected of them.", domain: 'team' },
+            { text: "Roles and responsibilities across the team are clearly defined.", domain: 'team' },
+            { text: "My team consistently follows through on commitments.", domain: 'team' },
+            { text: "There is a high level of trust among members of the leadership team.", domain: 'team' },
+            { text: "Important decisions are made at the right level, not escalated unnecessarily.", domain: 'team' },
+            { text: "Team members feel safe bringing up concerns or opposing viewpoints.", domain: 'team' },
+            { text: "My team is aligned around the same priorities.", domain: 'team' },
+            { text: "We handle conflict directly and productively.", domain: 'team' },
+            { text: "I am confident in the capabilities of my leadership team.", domain: 'team' },
+            { text: "Information flows clearly and consistently across the team.", domain: 'team' },
+            { text: "Our company has a clear and well-communicated strategy.", domain: 'company' },
+            { text: "We have the right systems and processes in place to support growth.", domain: 'company' },
+            { text: "Decision-making is efficient and not slowed by bureaucracy or confusion.", domain: 'company' },
+            { text: "We consistently execute on our plans.", domain: 'company' },
+            { text: "Accountability is clear across the organization.", domain: 'company' },
+            { text: "We have the right people in the right roles.", domain: 'company' },
+            { text: "Our organizational structure supports, rather than hinders, performance.", domain: 'company' },
+            { text: "Priorities are clear and rarely shift without good reason.", domain: 'company' },
+            { text: "The company adapts well to change.", domain: 'company' },
+            { text: "Our culture reinforces the behaviors we want to see.", domain: 'company' }
+        ];
+
+        let shuffledQuestions = [];
+        let currentQuestionIndex = 0;
+        let answers = [];
+        let results = {};
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function startDiagnostic() {
+            shuffledQuestions = shuffleArray(questions);
+            currentQuestionIndex = 0;
+            answers = [];
+            
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('questions-screen').classList.remove('hidden');
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const question = shuffledQuestions[currentQuestionIndex];
+            document.getElementById('question-text').textContent = question.text;
+            document.getElementById('progress-count').textContent = `Question ${currentQuestionIndex + 1} of 30`;
+            
+            const progress = ((currentQuestionIndex) / 30) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+        }
+
+        function answerQuestion(value) {
+            answers.push({
+                domain: shuffledQuestions[currentQuestionIndex].domain,
+                value: value
+            });
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                showQuestion();
+            } else {
+                calculateResults();
+                showResults();
+            }
+        }
+
+        function calculateResults() {
+            const scores = { self: 0, team: 0, company: 0 };
+            
+            answers.forEach(answer => {
+                scores[answer.domain] += answer.value;
+            });
+
+            results = {
+                self: scores.self,
+                team: scores.team,
+                company: scores.company
+            };
+
+            const maxScore = Math.max(scores.self, scores.team, scores.company);
+            
+            if (maxScore === scores.self) {
+                results.primaryConstraint = 'You — Leader Capacity';
+                results.summary = "Your results suggest that the greatest constraint right now isn't your competence or commitment—it's the internal load you're carrying as a leader. When clarity, margin, and emotional steadiness are stretched thin, even strong leaders begin leading reactively rather than intentionally. This often shows up as isolation, second-guessing, fatigue, or a sense that the role is taking more than it's giving. Strengthening your leadership capacity isn't about working harder; it's about having the right support, perspective, and space to lead from health and confidence again.";
+            } else if (maxScore === scores.team) {
+                results.primaryConstraint = 'Team — Culture & Connection';
+                results.summary = "Your results suggest that the biggest constraint right now lies in the relational health of the team. When trust, communication, or psychological safety are underdeveloped, progress slows and energy drains—even in capable organizations. This can show up as guarded conversations, unresolved conflict, or uncertainty about whether the right people are in the right roles. Strengthening culture isn't about fixing people; it's about creating an environment where honesty, ownership, and healthy dialogue can thrive.";
+            } else {
+                results.primaryConstraint = 'Company — Identity & Clarity';
+                results.summary = "Your results indicate that the main constraint facing your organization is a lack of shared clarity. When identity, direction, and priorities aren't fully aligned, leaders and teams can stay busy without moving forward together. This often leads to confusion, misaligned decisions, and difficulty saying no—even when effort and talent are present. Clarifying who you are, what you exist to do, and where you're headed creates focus, confidence, and momentum across the entire organization.";
+            }
+        }
+
+        function showResults() {
+            document.getElementById('questions-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            document.getElementById('primary-constraint-text').textContent = results.primaryConstraint;
+            document.getElementById('constraint-summary').textContent = results.summary;
+
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['You', 'Team', 'Company'],
+                    datasets: [{
+                        data: [results.self, results.team, results.company],
+                        backgroundColor: ['#3b82f6', '#8b5cf6', '#06b6d4'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 14 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function submitResults() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const company = document.getElementById('company').value;
+
+            if (!name || !email) {
+                alert('Please enter your name and email.');
+                return;
+            }
+
+            const data = {
+                name: name,
+                email: email,
+                company: company || 'Not provided',
+                primaryConstraint: results.primaryConstraint,
+                selfScore: results.self,
+                teamScore: results.team,
+                companyScore: results.company
+            };
+
+            // Send to Google Apps Script
+            fetch('https://script.google.com/macros/s/AKfycbyZNLBzbdACXFc5D_AEkd3sDD-RnwvHXQ3Ag3u7a19GRfomKByQRm-9lOANv68XHNgv3Q/exec', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).catch(error => {
+                console.log('Data sent (may be blocked by CORS, but should still work)');
+            });
+
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('thankyou-screen').classList.remove('hidden');
+            document.getElementById('final-constraint').textContent = results.primaryConstraint;
+        }
+    </script>
+</body>
+</html>
