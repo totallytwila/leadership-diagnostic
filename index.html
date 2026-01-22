@@ -520,75 +520,80 @@
             });
         }
 
-        function submitResults() {
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const company = document.getElementById('company').value;
+        async function submitResults() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const company = document.getElementById('company').value;
 
-    if (!name || !email) {
-        alert('Please enter your name and email.');
-        return;
-    }
+            if (!name || !email) {
+                alert('Please enter your name and email.');
+                return;
+            }
 
-    const data = {
-        name: name,
-        email: email,
-        company: company || 'Not provided',
-        primaryConstraint: results.primaryConstraint,
-        selfScore: results.self,
-        teamScore: results.team,
-        companyScore: results.company
-    };
+            // Prepare the email body with full results
+            const emailBody = `
+LEADERSHIP DIAGNOSTIC RESULTS
 
-    // Use Google Forms approach - create invisible iframe
-    const iframe = document.createElement('iframe');
-    iframe.name = 'hidden_iframe';
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+Name: ${name}
+Email: ${email}
+Company: ${company || 'Not provided'}
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://script.google.com/macros/s/AKfycbzBCfNuiU-qSC3I1pPw58xLHP8cADjnJv4kVMJqHcTbC9SUKnfZad5C-HgCwNncpD5_/exec';
-    form.target = 'hidden_iframe';
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    // Add form fields
-    Object.keys(data).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = data[key];
-        form.appendChild(input);
-    });
+PRIMARY CONSTRAINT: ${results.primaryConstraint}
 
-    document.body.appendChild(form);
-    form.submit();
+Domain Scores:
+- You: ${results.self}
+- Team: ${results.team}
+- Company: ${results.company}
 
-    // Show thank you screen immediately
-    document.getElementById('results-screen').classList.add('hidden');
-    document.getElementById('thankyou-screen').classList.remove('hidden');
-    document.getElementById('final-constraint').textContent = results.primaryConstraint;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    // Clean up after 1 second
-    setTimeout(() => {
-        document.body.removeChild(form);
-        document.body.removeChild(iframe);
-    }, 1000);
-}
+WHAT THIS MEANS:
 
-            // Send to Google Apps Script
-           fetch('https://script.google.com/macros/s/AKfycbzBCfNuiU-qSC3I1pPw58xLHP8cADjnJv4kVMJqHcTbC9SUKnfZad5C-HgCwNncpD5_/exec', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            }).catch(error => {
-                console.log('Data sent (may be blocked by CORS, but should still work)');
-            });
+${results.summary}
 
-            document.getElementById('results-screen').classList.add('hidden');
-            document.getElementById('thankyou-screen').classList.remove('hidden');
-            document.getElementById('final-constraint').textContent = results.primaryConstraint;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+We look forward to exploring this with you at the Lunch & Leaders gathering on February 3rd at BIA Headquarters (12:00-1:30 pm).
+
+Questions? Contact us at NoviEdge.
+
+Best regards,
+The NoviEdge Team
+            `.trim();
+
+            // Submit to Formspree
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('company', company || 'Not provided');
+            formData.append('primaryConstraint', results.primaryConstraint);
+            formData.append('youScore', results.self);
+            formData.append('teamScore', results.team);
+            formData.append('companyScore', results.company);
+            formData.append('message', emailBody);
+            formData.append('_replyto', email);
+            formData.append('_subject', 'New Leadership Diagnostic Submission');
+            formData.append('_cc', email); // This sends a copy to the participant
+
+            try {
+                await fetch('https://formspree.io/f/mjgyvjdw', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // Show thank you screen
+                document.getElementById('results-screen').classList.add('hidden');
+                document.getElementById('thankyou-screen').classList.remove('hidden');
+                document.getElementById('final-constraint').textContent = results.primaryConstraint;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('There was an issue submitting your results. Please try again.');
+            }
         }
     </script>
 </body>
